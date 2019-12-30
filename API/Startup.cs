@@ -32,7 +32,10 @@ namespace API
             });
             services.AddControllers();
             services.AddMediatR(typeof(List.Handler).Assembly)
-                .AddMediatR(typeof(Details.Handler).Assembly);
+                .AddMediatR(typeof(Details.Handler).Assembly)
+                .AddMediatR(typeof(Create.Handler).Assembly)
+                .AddMediatR(typeof(Edit.Handler).Assembly)
+                .AddMediatR(typeof(Delete.Handler).Assembly);
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
