@@ -1,12 +1,15 @@
-import React, { useState, useEffect, Fragment, SyntheticEvent } from "react";
+import React, { useState, useEffect, Fragment, SyntheticEvent, useContext } from "react";
 import { Container } from "semantic-ui-react";
 import { IActivity } from "../modules/activities";
 import { NavBar } from "../../features/nav/NavBar";
-import { ActivityDashboard } from "../../features/activities/dashboard/ActivityDashboard";
+import ActivityDashboard from "../../features/activities/dashboard/ActivityDashboard";
 import agent from "../api/agent";
 import { LoadingComponent } from "./LoadingComponent";
+import ActivityStore from "../stores/activityStore";
+import {observer} from 'mobx-react-lite';
 
 const App = () => {
+  const activityStore = useContext(ActivityStore);
   const [activities, setActivities] = useState<IActivity[]>([]); // [] = init state
   const [selectedActivity, setSelectedActivity] = useState<IActivity | null>(
     null
@@ -15,11 +18,6 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [target, setTarget] = useState(''); // name of the button that was clicked
-
-  const handleSelectActivity = (id: string) => {
-    setSelectedActivity(activities.filter(a => a.id === id)[0]);
-    setIsEditMode(false);
-  };
 
   const handleOpenCreateForm = () => {
     setIsEditMode(true);
@@ -62,19 +60,10 @@ const App = () => {
   };
 
   useEffect(() => {
-    agent.ActivitiesRequests.list()
-      .then(response => {
-        let acs: IActivity[] = [];
-        response.forEach(a => {
-          a.date = a.date.split(".")[0];
-          acs.push(a);
-        });
-        setActivities(acs); // cause the setEffect to run again.
-      })
-      .then(() => setLoading(false));
-  }, []); // [] as seconds parameter ansure that the useEffect will only be execute one time.
+    activityStore.loadActivities();
+  }, [activityStore]); // [] as seconds parameter ansure that the useEffect will only be execute one time.
 
-  if (loading) {
+  if (activityStore.loadingInitial) {
     return <LoadingComponent content="Locading activities..." />;
   }
   // render() {
@@ -83,10 +72,7 @@ const App = () => {
       <NavBar openCreateForm={handleOpenCreateForm} />
       <Container style={{ marginTop: "7em" }}>
         <ActivityDashboard
-          activities={activities}
-          selectAnActivity={handleSelectActivity}
-          selectedActivity={selectedActivity}
-          isEditMode={isEditMode}
+          activities={activityStore.activities}
           setEditMode={setIsEditMode}
           setSelectedActivity={setSelectedActivity}
           createActivity={handleCreateActivity}
@@ -100,4 +86,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default observer(App);

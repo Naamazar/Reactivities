@@ -1,15 +1,14 @@
-import React, { SyntheticEvent } from "react";
+import React, { SyntheticEvent, useContext } from "react";
 import { Grid } from "semantic-ui-react";
 import { IActivity } from "../../../app/modules/activities";
-import { ActivityList } from "./ActivityList";
-import { ActivityDetails } from "../details/ActivityDetails";
+import ActivityList from "./ActivityList";
+import ActivityDetails from "../details/ActivityDetails";
 import { ActivityForm } from "../form/ActivityForm";
+import {observer} from 'mobx-react-lite';
+import ActivityStore from '../../../app/stores/activityStore';
 
 interface IProps {
   activities: IActivity[];
-  selectAnActivity: (id: string) => void;
-  selectedActivity: IActivity | null;
-  isEditMode: boolean;
   setEditMode: (editMode: boolean) => void;
   setSelectedActivity: (a: IActivity | null) => void;
   createActivity: (a: IActivity) => void;
@@ -19,11 +18,8 @@ interface IProps {
   target: string;
 }
 
-export const ActivityDashboard: React.FC<IProps> = ({
+const ActivityDashboard: React.FC<IProps> = ({
   activities,
-  selectAnActivity,
-  selectedActivity,
-  isEditMode,
   setEditMode,
   setSelectedActivity,
   createActivity,
@@ -32,12 +28,12 @@ export const ActivityDashboard: React.FC<IProps> = ({
   submitting,
   target
 }) => {
+  const activityStore = useContext(ActivityStore);
+  const {isEditMode, selectedActivity} = activityStore;
   return (
     <Grid>
       <Grid.Column width={10}>
         <ActivityList
-          activities={activities}
-          selectActivity={selectAnActivity}
           deleteActivity={deleteActivity}
           submitting ={submitting}
           target={target}
@@ -46,7 +42,6 @@ export const ActivityDashboard: React.FC<IProps> = ({
       <Grid.Column width={6}>
         {selectedActivity && !isEditMode && (
           <ActivityDetails
-            activity={selectedActivity}
             setEditMode={setEditMode}
             setSelectedActivity={setSelectedActivity}
           />
@@ -68,3 +63,5 @@ export const ActivityDashboard: React.FC<IProps> = ({
     </Grid>
   );
 };
+
+export default observer(ActivityDashboard);
