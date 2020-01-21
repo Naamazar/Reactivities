@@ -1,32 +1,28 @@
-import React, {useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Grid } from "semantic-ui-react";
 import ActivityList from "./ActivityList";
-import ActivityDetails from "../details/ActivityDetails";
-import ActivityForm from "../form/ActivityForm";
 import {observer} from 'mobx-react-lite';
 import ActivityStore from '../../../app/stores/activityStore';
-
+import { LoadingComponent } from "../../../app/layout/LoadingComponent";
 
 const ActivityDashboard: React.FC = () => {
   const activityStore = useContext(ActivityStore);
-  const {isEditMode, selectedActivity} = activityStore;
+
+  useEffect(() => {
+    activityStore.loadActivities();
+  }, [activityStore]); // [] as seconds parameter ansure that the useEffect will only be execute one time.
+
+  if (activityStore.loadingInitial) {
+    return <LoadingComponent content="Locading activities..." />;
+  }
+
   return (
     <Grid>
       <Grid.Column width={10}>
         <ActivityList />
       </Grid.Column>
       <Grid.Column width={6}>
-        {selectedActivity && !isEditMode && (
-          <ActivityDetails />
-        )}
-        {/*display ActivityDetails if user select activity*/}
-        {isEditMode && (
-          <ActivityForm
-            key={(selectedActivity && selectedActivity.id) || 0}            
-            activity={selectedActivity!}            
-          />
-        )}
-        {/*Display ActivityForm only if we are in editMode*/}
+        <h2>Activity Filters</h2>
       </Grid.Column>
     </Grid>
   );

@@ -8,9 +8,9 @@ configure({ enforceActions: "always" }); // strict mode enables.
 class ActivityStore {
   @observable activityRegistry = new Map();
   //   @observable activities: IActivity[] = []; // store our activities
-  @observable selectedActivity: IActivity | undefined; // observer for the selected activity
+  @observable activity: IActivity | null = null;; // observer for the selected activity
   @observable loadingInitial = false; // loading indicator
-  @observable isEditMode = false; // indicator for showing form or not (showing in editMode)
+//   @observable isEditMode = false; // indicator for showing form or not (showing in editMode)
   @observable submitting = false;
   @observable target = "";
 
@@ -29,22 +29,47 @@ class ActivityStore {
         as.forEach(a => {
           a.date = a.date.split(".")[0];
           this.activityRegistry.set(a.id, a);
-          // this.activities.push(a);
         });
       });
     } catch (error) {
       console.log(error);
     } finally {
-      runInAction("load activities error", () => {
+      runInAction("load activities finally", () => {
         this.loadingInitial = false;
       });
     }
   };
 
-  @action selectActivity = (id: string) => {
-    this.selectedActivity = this.activityRegistry.get(id);
-    //   this.selectedActivity = this.activities.find(a => a.id === id);
-    this.isEditMode = false;
+  @action loadActivity = async (id: string) => {
+    // need to cover to cases:
+    // 1. clicking on view fron activityList -> we HAVE this activity in this.activityRegistry, therefore no need to GET from server
+    // 2. refreshing page of activityDetails or saving it as bookmark to use in the future -> we DON'T HAVE this activity in this.activityRegistry
+    let a = this.getActivity(id);
+    if (a) {
+      this.activity = a;
+    } else {
+      this.loadingInitial = true;
+      try {
+        a = await agent.ActivitiesRequests.details(id);
+        runInAction("getting activity", () => {
+          this.activity = a;
+        });
+      } catch (error) {
+        console.log(error);
+      } finally {
+        runInAction("get activity finally", () => {
+          this.loadingInitial = false;
+        });
+      }
+    }
+  };
+
+  @action clearActivity = () => {
+    this.activity = null;
+  };
+
+  getActivity = (id: string) => {
+    return this.activityRegistry.get(id); // return undefined
   };
 
   @action createActivity = async (a: IActivity) => {
@@ -53,14 +78,14 @@ class ActivityStore {
       await agent.ActivitiesRequests.create(a);
       runInAction("creating ativities", () => {
         this.activityRegistry.set(a.id, a);
-        this.selectedActivity = a;
+        this.activity = a;
         // this.activities.push(a);
-        this.isEditMode = false;
+        // this.isEditMode = false;
       });
     } catch (error) {
       console.log(error);
     } finally {
-      runInAction("create activity error", () => {
+      runInAction("create activity finally", () => {
         this.submitting = false;
       });
     }
@@ -72,13 +97,13 @@ class ActivityStore {
       await agent.ActivitiesRequests.update(ac);
       runInAction("editing activity", () => {
         this.activityRegistry.set(ac.id, ac);
-        this.selectedActivity = ac;
-        this.isEditMode = false;
+        this.activity = ac;
+        // this.isEditMode = false;
       });
     } catch (error) {
       console.log(error);
     } finally {
-      runInAction("edit activity error", () => {
+      runInAction("edit activity finally", () => {
         this.submitting = false;
       });
     }
@@ -98,31 +123,14 @@ class ActivityStore {
     } catch (error) {
       console.log(error);
     } finally {
-      runInAction("delete activity error", () => {
+      runInAction("delete activity finally", () => {
         this.submitting = false;
         this.target = "";
       });
     }
   };
 
-  @action openCreateForm = () => {
-    this.isEditMode = true;
-    this.selectedActivity = undefined;
-  };
 
-  @action openEditForm = (id: string) => {
-    this.selectedActivity = this.activityRegistry.get(id);
-    this.isEditMode = true;
-  };
-
-  @action cancelSelectedActivity = () => {
-    this.selectedActivity = undefined;
-    this.isEditMode = false;
-  };
-
-  @action cancelFormOpen = () => {
-    this.isEditMode = false;
-  };
 }
 
 export default createContext(new ActivityStore());
